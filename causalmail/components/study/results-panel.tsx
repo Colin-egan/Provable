@@ -65,14 +65,11 @@ export function ResultsPanel({ result }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className={`grid gap-4 ${gridCols}`}>
-        {/* Card 1: ITT Effect */}
+        {/* Card 1: Revenue impact */}
         <Card className={`col-span-1 ${ittColor}`}>
           <CardHeader className="pb-2">
             <CardTitle className={`text-base ${ittTextColor}`}>
-              ITT Effect{" "}
-              <span className="text-xs font-normal opacity-70">
-                (effect of sending)
-              </span>
+              Revenue impact per customer
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -81,17 +78,14 @@ export function ResultsPanel({ result }: Props) {
             </p>
             {ittCiLower !== null && ittCiUpper !== null && (
               <p className={`text-xs ${ittTextColor} opacity-80`}>
-                95% CI: {fmt(ittCiLower)} to {fmt(ittCiUpper)}
+                Likely range: {fmt(ittCiLower)} to {fmt(ittCiUpper)}
               </p>
             )}
             {ittPValue !== null && (
               <div className="flex items-center gap-2">
                 <Badge variant={significant ? "default" : "secondary"}>
-                  {significant ? "Significant" : "Not significant"}
+                  {significant ? "Reliable result" : "Inconclusive"}
                 </Badge>
-                <span className="text-xs opacity-70">
-                  p = {ittPValue.toFixed(3)}
-                </span>
               </div>
             )}
             <p className={`text-sm ${ittTextColor} opacity-90`}>
@@ -100,17 +94,14 @@ export function ResultsPanel({ result }: Props) {
           </CardContent>
         </Card>
 
-        {/* Card 2: LATE Effect (only shown when engagement data exists) */}
+        {/* Card 2: Impact on readers (only shown when engagement data exists) */}
         {hasLATE && (
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-1.5">
-                LATE Effect{" "}
-                <span className="text-xs font-normal text-muted-foreground">
-                  (effect of reading)
-                </span>
+                Impact on engaged customers
                 <span
-                  title="This estimates the effect for people who actually read your email, not just everyone you sent it to. It's always larger than the ITT because it focuses on the people who engaged."
+                  title="This estimates the revenue effect for customers who actually opened or clicked your email — not everyone you sent it to. It's always larger than the overall impact because it focuses on people who engaged."
                   className="text-muted-foreground cursor-help text-xs"
                 >
                   ℹ️
@@ -121,18 +112,11 @@ export function ResultsPanel({ result }: Props) {
               <p className="text-3xl font-bold">{fmt(lateEstimate!)}</p>
               {lateCiLower !== null && lateCiUpper !== null && (
                 <p className="text-xs text-muted-foreground">
-                  95% CI: {fmt(lateCiLower)} to {fmt(lateCiUpper)}
+                  Likely range: {fmt(lateCiLower)} to {fmt(lateCiUpper)}
                 </p>
               )}
-              {firstStageF !== null && (
-                <div className="flex items-center gap-2">
-                  {weakInstrument && (
-                    <Badge variant="secondary">Weak instrument</Badge>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    F = {firstStageF.toFixed(1)} · {instrumentStrength(firstStageF)}
-                  </span>
-                </div>
+              {weakInstrument && (
+                <Badge variant="secondary">Low engagement — interpret with caution</Badge>
               )}
               <p className="text-sm text-muted-foreground opacity-90">
                 {interpretLATE(result)}

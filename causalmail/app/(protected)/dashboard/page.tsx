@@ -129,7 +129,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Average ITT effect</CardDescription>
+            <CardDescription>Avg. revenue impact</CardDescription>
             <CardTitle className="text-3xl">
               {avgITT !== null ? fmtCurrency(avgITT) : "—"}
             </CardTitle>
@@ -185,8 +185,8 @@ export default async function DashboardPage() {
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Customers</TableHead>
                   <TableHead className="text-right">Open rate</TableHead>
-                  <TableHead className="text-right">ITT estimate</TableHead>
-                  <TableHead className="text-right">95% CI</TableHead>
+                  <TableHead className="text-right">Revenue impact</TableHead>
+                  <TableHead className="text-right">Likely range</TableHead>
                   <TableHead className="text-right">Created</TableHead>
                 </TableRow>
               </TableHeader>
