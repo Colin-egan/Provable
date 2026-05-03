@@ -23,6 +23,7 @@ type Props = {
 export function CustomerTable({ customers, editable = false }: Props) {
   const treatment = customers.filter((c) => c.group === "TREATMENT");
   const control = customers.filter((c) => c.group === "CONTROL");
+  const hasBaseline = customers.some((c) => c.baselineRevenue !== null);
 
   return (
     <Tabs defaultValue="all">
@@ -32,13 +33,13 @@ export function CustomerTable({ customers, editable = false }: Props) {
         <TabsTrigger value="control">Control ({control.length})</TabsTrigger>
       </TabsList>
       <TabsContent value="all" className="mt-4">
-        <CustomerRows customers={customers} editable={editable} />
+        <CustomerRows customers={customers} editable={editable} hasBaseline={hasBaseline} />
       </TabsContent>
       <TabsContent value="treatment" className="mt-4">
-        <CustomerRows customers={treatment} editable={editable} />
+        <CustomerRows customers={treatment} editable={editable} hasBaseline={hasBaseline} showEngagement />
       </TabsContent>
       <TabsContent value="control" className="mt-4">
-        <CustomerRows customers={control} editable={editable} />
+        <CustomerRows customers={control} editable={editable} hasBaseline={hasBaseline} />
       </TabsContent>
     </Tabs>
   );
@@ -47,10 +48,16 @@ export function CustomerTable({ customers, editable = false }: Props) {
 function CustomerRows({
   customers,
   editable,
+  hasBaseline,
+  showEngagement = false,
 }: {
   customers: Customer[];
   editable: boolean;
+  hasBaseline: boolean;
+  showEngagement?: boolean;
 }) {
+  const colSpan = 3 + (hasBaseline ? 1 : 0) + (showEngagement ? 1 : 0);
+
   return (
     <div className="rounded-md border overflow-hidden">
       <Table>
@@ -58,19 +65,27 @@ function CustomerRows({
           <TableRow>
             <TableHead>Email</TableHead>
             <TableHead>Group</TableHead>
-            <TableHead className="w-32">Revenue</TableHead>
+            {hasBaseline && <TableHead className="text-right">Baseline revenue</TableHead>}
+            <TableHead className="w-32 text-right">Revenue</TableHead>
+            {showEngagement && <TableHead className="text-right">Email status</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {customers.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={colSpan} className="text-center text-muted-foreground py-8">
                 No customers.
               </TableCell>
             </TableRow>
           ) : (
             customers.map((c) => (
-              <CustomerRow key={c.id} customer={c} editable={editable} />
+              <CustomerRow
+                key={c.id}
+                customer={c}
+                editable={editable}
+                hasBaseline={hasBaseline}
+                showEngagement={showEngagement}
+              />
             ))
           )}
         </TableBody>
@@ -79,7 +94,17 @@ function CustomerRows({
   );
 }
 
-function CustomerRow({ customer, editable }: { customer: Customer; editable: boolean }) {
+function CustomerRow({
+  customer,
+  editable,
+  hasBaseline,
+  showEngagement,
+}: {
+  customer: Customer;
+  editable: boolean;
+  hasBaseline: boolean;
+  showEngagement: boolean;
+}) {
   const [localRevenue, setLocalRevenue] = useState(
     customer.revenue !== null ? String(customer.revenue) : ""
   );
@@ -102,6 +127,9 @@ function CustomerRow({ customer, editable }: { customer: Customer; editable: boo
     });
   }
 
+  const fmtCurrency = (n: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+
   return (
     <TableRow>
       <TableCell className="font-mono text-sm">{customer.email}</TableCell>
@@ -110,7 +138,12 @@ function CustomerRow({ customer, editable }: { customer: Customer; editable: boo
           {customer.group === "TREATMENT" ? "Treatment" : "Control"}
         </Badge>
       </TableCell>
-      <TableCell>
+      {hasBaseline && (
+        <TableCell className="text-right text-sm text-muted-foreground">
+          {customer.baselineRevenue !== null ? fmtCurrency(customer.baselineRevenue) : "—"}
+        </TableCell>
+      )}
+      <TableCell className="text-right">
         {editable ? (
           <input
             type="number"
@@ -124,15 +157,31 @@ function CustomerRow({ customer, editable }: { customer: Customer; editable: boo
           />
         ) : (
           <span className="text-sm">
-            {customer.revenue !== null
-              ? new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(customer.revenue)
-              : "—"}
+            {customer.revenue !== null ? fmtCurrency(customer.revenue) : "—"}
           </span>
         )}
       </TableCell>
+      {showEngagement && (
+        <TableCell className="text-right">
+          <div className="flex gap-1 justify-end flex-wrap">
+            {customer.emailSentAt && (
+              <Badge variant="outline" className="text-xs">Sent</Badge>
+            )}
+            {customer.emailOpenedAt && (
+              <Badge variant="secondary" className="text-xs">Opened</Badge>
+            )}
+            {customer.emailClickedAt && (
+              <Badge variant="default" className="text-xs">Clicked</Badge>
+            )}
+            {customer.emailBounced && (
+              <Badge variant="destructive" className="text-xs">Bounced</Badge>
+            )}
+            {!customer.emailSentAt && !customer.emailBounced && (
+              <span className="text-xs text-muted-foreground">—</span>
+            )}
+          </div>
+        </TableCell>
+      )}
     </TableRow>
   );
 }

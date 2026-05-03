@@ -58,18 +58,29 @@ model StudyResult {
   ittCiUpper        Float?
   ittPValue         Float?
   ittSignificant    Boolean?
-  lateEstimate      Float?
-  lateSe            Float?
-  lateCiLower       Float?
-  lateCiUpper       Float?
-  firstStageF       Float?
-  weakInstrument    Boolean?
-  openRateTreatment Float?
-  openRateControl   Float?
-  nTreatment        Int?
-  nControl          Int?
-  warnings          String[]
-  computedAt        DateTime @default(now())
+  ittAdjustedEstimate    Float?
+  ittAdjustedSe          Float?
+  ittAdjustedCiLower     Float?
+  ittAdjustedCiUpper     Float?
+  ittAdjustedSignificant Boolean?
+  lateEstimate           Float?
+  lateSe                 Float?
+  lateCiLower            Float?
+  lateCiUpper            Float?
+  firstStageF            Float?
+  weakInstrument         Boolean?
+  lateEstimateOpens      Float?
+  lateSeOpens            Float?
+  lateCiLowerOpens       Float?
+  lateCiUpperOpens       Float?
+  firstStageFOpens       Float?
+  weakInstrumentOpens    Boolean?
+  openRateTreatment      Float?
+  openRateControl        Float?
+  nTreatment             Int?
+  nControl               Int?
+  warnings               String[]
+  computedAt             DateTime @default(now())
 }
 
 enum StudyStatus {

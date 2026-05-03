@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { getUserStudies } from "@/actions/studies";
 import { interpretDashboardInsights } from "@/lib/interpret";
 import { TrendChart } from "@/components/dashboard/trend-chart";
+import { CampaignComparison } from "@/components/dashboard/campaign-comparison";
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Draft",
@@ -79,6 +80,17 @@ export default async function DashboardPage() {
       results: s.results,
     }))
   );
+
+  // Studies with full data for campaign comparison
+  const comparisonStudies = completed
+    .filter((s) => s.results?.ittEstimate !== null)
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      createdAt: s.createdAt,
+      customers: s.customers,
+      results: s.results!,
+    }));
 
   // Studies with full ITT data for the trend chart
   const chartStudies = completed
@@ -249,6 +261,11 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Campaign comparison */}
+      {comparisonStudies.length >= 2 && (
+        <CampaignComparison studies={comparisonStudies} />
+      )}
 
       {/* Insights */}
       {insights.length > 0 && (

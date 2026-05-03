@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { CsvUpload } from "./csv-upload";
+import { BaselineSetup } from "./baseline-setup";
 import { EmailEditor } from "./email-editor";
 import { StudyConfig } from "./study-config";
 import { StudyReview } from "./study-review";
 import type { CustomerInput } from "@/lib/randomize";
 
-const STEPS = ["Upload list", "Write email", "Configure", "Review"] as const;
+const STEPS = ["Upload list", "Baseline data", "Write email", "Configure", "Review"] as const;
 
 type FormData = {
   customers: CustomerInput[];
@@ -36,7 +37,7 @@ export function NewStudyForm() {
   return (
     <div className="flex flex-col gap-8">
       {/* Progress indicator */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {STEPS.map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <div
@@ -50,16 +51,10 @@ export function NewStudyForm() {
             >
               {i < step ? "✓" : i + 1}
             </div>
-            <span
-              className={`text-sm ${
-                i === step ? "font-medium" : "text-muted-foreground"
-              }`}
-            >
+            <span className={`text-sm ${i === step ? "font-medium" : "text-muted-foreground"}`}>
               {label}
             </span>
-            {i < STEPS.length - 1 && (
-              <div className="h-px w-8 bg-border" />
-            )}
+            {i < STEPS.length - 1 && <div className="h-px w-8 bg-border" />}
           </div>
         ))}
       </div>
@@ -75,6 +70,16 @@ export function NewStudyForm() {
       )}
 
       {step === 1 && (
+        <BaselineSetup
+          customers={form.customers}
+          onComplete={(customers) => {
+            patch("customers", customers);
+            setStep(2);
+          }}
+        />
+      )}
+
+      {step === 2 && (
         <EmailEditor
           studyName={form.studyName}
           subject={form.emailSubject}
@@ -82,22 +87,22 @@ export function NewStudyForm() {
           onStudyNameChange={(v) => patch("studyName", v)}
           onSubjectChange={(v) => patch("emailSubject", v)}
           onBodyChange={(v) => patch("emailBody", v)}
-          onComplete={() => setStep(2)}
+          onComplete={() => setStep(3)}
         />
       )}
 
-      {step === 2 && (
+      {step === 3 && (
         <StudyConfig
           totalCustomers={form.customers.length}
           treatmentPct={form.treatmentPct}
           outcomeWindowDays={form.outcomeWindowDays}
           onTreatmentPctChange={(v) => patch("treatmentPct", v)}
           onOutcomeWindowChange={(v) => patch("outcomeWindowDays", v)}
-          onComplete={() => setStep(3)}
+          onComplete={() => setStep(4)}
         />
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <StudyReview
           customers={form.customers}
           emailSubject={form.emailSubject}

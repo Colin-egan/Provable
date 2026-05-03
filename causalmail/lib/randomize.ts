@@ -1,6 +1,7 @@
 export type CustomerInput = {
   email: string;
   externalId?: string | null;
+  baselineRevenue?: number | null;
 };
 
 export type RandomizedCustomer = CustomerInput & {

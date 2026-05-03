@@ -33,6 +33,7 @@ export async function createStudy(input: CreateStudyInput) {
           email: c.email,
           externalId: c.externalId ?? null,
           group: c.group,
+          baselineRevenue: c.baselineRevenue ?? null,
         })),
       },
     },
@@ -64,6 +65,7 @@ export async function getUserStudies() {
     where: { userId: user.id },
     include: {
       results: true,
+      customers: { select: { email: true } },
       _count: { select: { customers: true } },
     },
     orderBy: { createdAt: "desc" },
