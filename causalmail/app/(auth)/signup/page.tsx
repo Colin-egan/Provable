@@ -23,6 +23,7 @@ export default function SignupPage() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,7 +40,13 @@ export default function SignupPage() {
 
     setLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error, data } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
     if (error) {
       setError(error.message);
@@ -47,8 +54,29 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    // Session is null when email confirmation is required
+    if (data.session) {
+      router.push("/dashboard");
+      router.refresh();
+    } else {
+      setCheckEmail(true);
+      setLoading(false);
+    }
+  }
+
+  if (checkEmail) {
+    return (
+      <main className="flex flex-1 items-center justify-center px-6 py-24">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>Check your email</CardTitle>
+            <CardDescription>
+              We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </main>
+    );
   }
 
   return (
