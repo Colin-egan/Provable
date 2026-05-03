@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,19 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { bulkImportRevenue } from "@/actions/customers";
 
-type Props = { studyId: string };
+type Props = {
+  studyId: string;
+  field?: "revenue" | "baselineRevenue";
+  label?: string;
+};
 type RevenueRow = { email: string; revenue: number };
 
-export function BulkImportButton({ studyId }: Props) {
+export function BulkImportButton({
+  studyId,
+  field = "revenue",
+  label = "Bulk Import Revenue",
+}: Props) {
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,10 +91,11 @@ export function BulkImportButton({ studyId }: Props) {
   function handleConfirm() {
     startTransition(async () => {
       try {
-        await bulkImportRevenue(studyId, parsed);
-        toast.success(`Revenue imported for ${parsed.length} customers.`);
+        const { updatedCount } = await bulkImportRevenue(studyId, parsed, field);
+        toast.success(`Updated ${updatedCount} of ${parsed.length} customers.`);
         setOpen(false);
         reset();
+        router.refresh();
       } catch {
         toast.error("Import failed. Please try again.");
       }
@@ -100,7 +111,7 @@ export function BulkImportButton({ studyId }: Props) {
       }}
     >
       <DialogTrigger render={<Button variant="outline" size="sm" />}>
-        Bulk Import Revenue
+        {label}
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>

@@ -157,7 +157,14 @@ export default async function StudyPage({
           <h2 className="text-lg font-semibold">
             Customers ({treatmentCount} treatment / {controlCount} control)
           </h2>
-          {(isCollecting || isRandomized) && (
+          {isRandomized && (
+            <BulkImportButton
+              studyId={study.id}
+              field="baselineRevenue"
+              label="Import Baseline Revenue"
+            />
+          )}
+          {isCollecting && (
             <BulkImportButton studyId={study.id} />
           )}
         </div>

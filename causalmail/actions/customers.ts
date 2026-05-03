@@ -22,7 +22,8 @@ export async function updateRevenue(customerId: string, revenue: number | null) 
 
 export async function bulkImportRevenue(
   studyId: string,
-  rows: { email: string; revenue: number }[]
+  rows: { email: string; revenue: number }[],
+  field: "revenue" | "baselineRevenue" = "revenue"
 ) {
   const user = await getOrCreateUser();
 
@@ -31,14 +32,16 @@ export async function bulkImportRevenue(
   });
   if (!study) throw new Error("Study not found");
 
-  await Promise.all(
+  const results = await Promise.all(
     rows.map(({ email, revenue }) =>
       db.customer.updateMany({
         where: { studyId, email },
-        data: { revenue },
+        data: { [field]: revenue },
       })
     )
   );
 
+  const updatedCount = results.reduce((sum, r) => sum + r.count, 0);
   revalidatePath(`/studies/${studyId}`);
+  return { updatedCount };
 }

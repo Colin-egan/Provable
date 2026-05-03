@@ -42,9 +42,10 @@ model Customer {
   emailOpenedAt  DateTime?
   emailClickedAt DateTime?
   clickedUrl     String?
-  emailBounced   Boolean    @default(false)
-  revenue        Float?
-  createdAt      DateTime   @default(now())
+  emailBounced     Boolean    @default(false)
+  baselineRevenue  Float?
+  revenue          Float?
+  createdAt        DateTime   @default(now())
 }
 
 model StudyResult {
