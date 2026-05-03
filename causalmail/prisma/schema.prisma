@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  studies   Study[]
+  createdAt DateTime @default(now())
+}
+
+model Study {
+  id                String       @id @default(cuid())
+  name              String
+  userId            String
+  user              User         @relation(fields: [userId], references: [id])
+  status            StudyStatus  @default(DRAFT)
+  treatmentPct      Float        @default(0.5)
+  outcomeWindowDays Int          @default(7)
+  emailSubject      String?
+  emailBody         String?
+  customers         Customer[]
+  results           StudyResult?
+  createdAt         DateTime     @default(now())
+  launchedAt        DateTime?
+  completedAt       DateTime?
+}
+
+model Customer {
+  id             String     @id @default(cuid())
+  studyId        String
+  study          Study      @relation(fields: [studyId], references: [id])
+  email          String
+  externalId     String?
+  group          GroupType?
+  emailSentAt    DateTime?
+  emailOpenedAt  DateTime?
+  emailClickedAt DateTime?
+  clickedUrl     String?
+  emailBounced   Boolean    @default(false)
+  revenue        Float?
+  createdAt      DateTime   @default(now())
+}
+
+model StudyResult {
+  id                String   @id @default(cuid())
+  studyId           String   @unique
+  study             Study    @relation(fields: [studyId], references: [id])
+  ittEstimate       Float?
+  ittSe             Float?
+  ittCiLower        Float?
+  ittCiUpper        Float?
+  ittPValue         Float?
+  ittSignificant    Boolean?
+  lateEstimate      Float?
+  lateSe            Float?
+  lateCiLower       Float?
+  lateCiUpper       Float?
+  firstStageF       Float?
+  weakInstrument    Boolean?
+  openRateTreatment Float?
+  openRateControl   Float?
+  nTreatment        Int?
+  nControl          Int?
+  warnings          String[]
+  computedAt        DateTime @default(now())
+}
+
+enum StudyStatus {
+  DRAFT
+  RANDOMIZED
+  SENDING
+  COLLECTING
+  COMPLETED
+}
+
+enum GroupType {
+  TREATMENT
+  CONTROL
+}
