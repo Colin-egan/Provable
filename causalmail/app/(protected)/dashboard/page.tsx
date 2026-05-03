@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getUserStudies } from "@/actions/studies";
 import { interpretDashboardInsights } from "@/lib/interpret";
+import { TrendChart } from "@/components/dashboard/trend-chart";
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Draft",
@@ -37,6 +38,10 @@ function fmtCurrency(n: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(n);
+}
+
+function fmtPct(n: number) {
+  return `${(n * 100).toFixed(1)}%`;
 }
 
 function ittColor(estimate: number | null, significant: boolean | null) {
@@ -68,8 +73,28 @@ export default async function DashboardPage() {
       : null;
 
   const insights = interpretDashboardInsights(
-    studies.map((s) => ({ name: s.name, results: s.results }))
+    studies.map((s) => ({
+      name: s.name,
+      createdAt: s.createdAt,
+      results: s.results,
+    }))
   );
+
+  // Studies with full ITT data for the trend chart
+  const chartStudies = completed
+    .filter(
+      (s) =>
+        s.results?.ittEstimate !== null &&
+        s.results?.ittCiLower !== null &&
+        s.results?.ittCiUpper !== null
+    )
+    .map((s) => ({
+      name: s.name,
+      createdAt: s.createdAt,
+      ittEstimate: s.results!.ittEstimate!,
+      ittCiLower: s.results!.ittCiLower!,
+      ittCiUpper: s.results!.ittCiUpper!,
+    }));
 
   return (
     <div className="flex flex-col gap-8">
@@ -122,6 +147,21 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* Trend chart */}
+      {chartStudies.length >= 2 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>ITT Trend</CardTitle>
+            <CardDescription>
+              Estimated causal effect per customer over time, with 95% confidence intervals.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TrendChart studies={chartStudies} />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Study table */}
       <Card>
         <CardHeader>
@@ -144,6 +184,7 @@ export default async function DashboardPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Customers</TableHead>
+                  <TableHead className="text-right">Open rate</TableHead>
                   <TableHead className="text-right">ITT estimate</TableHead>
                   <TableHead className="text-right">95% CI</TableHead>
                   <TableHead className="text-right">Created</TableHead>
@@ -169,6 +210,11 @@ export default async function DashboardPage() {
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground">
                         {study._count.customers.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {r?.openRateTreatment !== null && r?.openRateTreatment !== undefined
+                          ? fmtPct(r.openRateTreatment)
+                          : "—"}
                       </TableCell>
                       <TableCell
                         className={cn(

@@ -1,23 +1,17 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getSessionEmail } from "@/lib/auth";
 
 export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const email = await getSessionEmail();
+  if (!email) redirect("/login");
 
-  if (!user) {
-    redirect("/login");
-  }
+  const user = { email };
 
   return (
     <div className="flex flex-col flex-1">

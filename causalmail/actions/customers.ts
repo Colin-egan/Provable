@@ -1,25 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-
-async function getOrCreateUser() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email) redirect("/login");
-
-  return db.user.upsert({
-    where: { email: user.email },
-    create: { email: user.email },
-    update: {},
-  });
-}
+import { getOrCreateUser } from "@/lib/auth";
 
 export async function updateRevenue(customerId: string, revenue: number | null) {
   const user = await getOrCreateUser();

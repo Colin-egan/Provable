@@ -12,13 +12,15 @@ export type ITTResult = {
   nTreatment: number;
   nControl: number;
   warnings: string[];
-  // LATE fields — Phase 2
-  lateEstimate: null;
-  lateSe: null;
-  lateCiLower: null;
-  lateCiUpper: null;
-  firstStageF: null;
-  weakInstrument: null;
+};
+
+export type LATEResult = {
+  lateEstimate: number | null;
+  lateSe: number | null;
+  lateCiLower: number | null;
+  lateCiUpper: number | null;
+  firstStageF: number | null;
+  weakInstrument: boolean | null;
 };
 
 function sampleVariance(values: number[]): number {
@@ -114,11 +116,76 @@ export function computeITT({
     nTreatment,
     nControl,
     warnings,
-    lateEstimate: null,
-    lateSe: null,
-    lateCiLower: null,
-    lateCiUpper: null,
-    firstStageF: null,
-    weakInstrument: null,
+  };
+}
+
+const NULL_LATE: LATEResult = {
+  lateEstimate: null,
+  lateSe: null,
+  lateCiLower: null,
+  lateCiUpper: null,
+  firstStageF: null,
+  weakInstrument: null,
+};
+
+export function computeLATE({
+  customers,
+  engagementType,
+  ittResult,
+}: {
+  customers: Customer[];
+  engagementType: "opens" | "clicks";
+  ittResult: ITTResult;
+}): LATEResult {
+  const treatment = customers.filter((c) => c.group === "TREATMENT");
+  const control = customers.filter((c) => c.group === "CONTROL");
+
+  const nT = treatment.length;
+  const nC = control.length;
+  if (nT === 0 || nC === 0) return NULL_LATE;
+
+  const engagedT =
+    engagementType === "clicks"
+      ? treatment.filter((c) => c.emailClickedAt).length
+      : treatment.filter((c) => c.emailOpenedAt).length;
+
+  const engagedC =
+    engagementType === "clicks"
+      ? control.filter((c) => c.emailClickedAt).length
+      : control.filter((c) => c.emailOpenedAt).length;
+
+  const pT = engagedT / nT;
+  const pC = engagedC / nC;
+  const firstStageDiff = pT - pC;
+
+  if (Math.abs(firstStageDiff) < 0.001) return NULL_LATE;
+
+  // Standard error of the engagement rate difference
+  const seEngDiff = Math.sqrt(
+    (pT * (1 - pT)) / nT + (pC * (1 - pC)) / nC
+  );
+
+  const firstStageF = seEngDiff > 0 ? (firstStageDiff / seEngDiff) ** 2 : 0;
+  const weakInstrument = firstStageF < 10;
+
+  // Wald estimator
+  const lateEstimate = ittResult.ittEstimate / firstStageDiff;
+
+  // Delta method standard error
+  const lateSe = Math.sqrt(
+    (ittResult.ittSe / firstStageDiff) ** 2 +
+      ((lateEstimate * seEngDiff) / firstStageDiff) ** 2
+  );
+
+  const lateCiLower = lateEstimate - 1.96 * lateSe;
+  const lateCiUpper = lateEstimate + 1.96 * lateSe;
+
+  return {
+    lateEstimate,
+    lateSe,
+    lateCiLower,
+    lateCiUpper,
+    firstStageF,
+    weakInstrument,
   };
 }

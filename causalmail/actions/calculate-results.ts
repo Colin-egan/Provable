@@ -1,26 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { computeITT } from "@/lib/stats";
-
-async function getOrCreateUser() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email) redirect("/login");
-
-  return db.user.upsert({
-    where: { email: user.email },
-    create: { email: user.email },
-    update: {},
-  });
-}
+import { computeITT, computeLATE } from "@/lib/stats";
+import { getOrCreateUser } from "@/lib/auth";
 
 export async function calculateResults(studyId: string) {
   const user = await getOrCreateUser();
@@ -37,10 +20,18 @@ export async function calculateResults(studyId: string) {
     launchedAt: study.launchedAt,
   });
 
+  const lateStats = computeLATE({
+    customers: study.customers,
+    engagementType: "clicks",
+    ittResult: stats,
+  });
+
+  const resultData = { studyId, ...stats, ...lateStats };
+
   await db.studyResult.upsert({
     where: { studyId },
-    create: { studyId, ...stats },
-    update: stats,
+    create: resultData,
+    update: resultData,
   });
 
   await db.study.update({

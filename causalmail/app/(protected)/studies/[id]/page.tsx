@@ -5,6 +5,9 @@ import { ResultsPanel } from "@/components/study/results-panel";
 import { CustomerTable } from "@/components/study/customer-table";
 import { CalculateResultsButton } from "@/components/study/calculate-results-button";
 import { ExportButton } from "@/components/study/export-button";
+import { SendEmailsButton } from "@/components/study/send-emails-button";
+import { TrackingPanel } from "@/components/study/tracking-panel";
+import { BulkImportButton } from "@/components/study/bulk-import-button";
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Draft",
@@ -44,6 +47,7 @@ export default async function StudyPage({
 
   const isCompleted = study.status === "COMPLETED";
   const isRandomized = study.status === "RANDOMIZED";
+  const isCollecting = study.status === "COLLECTING";
 
   return (
     <div className="flex flex-col gap-8">
@@ -67,8 +71,17 @@ export default async function StudyPage({
             })}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {isRandomized && (
+            <>
+              <SendEmailsButton studyId={study.id} treatmentCount={treatmentCount} />
+              <CalculateResultsButton
+                studyId={study.id}
+                windowClosed={windowClosed}
+              />
+            </>
+          )}
+          {isCollecting && (
             <CalculateResultsButton
               studyId={study.id}
               windowClosed={windowClosed}
@@ -91,6 +104,15 @@ export default async function StudyPage({
         </section>
       )}
 
+      {/* Tracking panel (COLLECTING only) */}
+      {isCollecting && (
+        <TrackingPanel
+          customers={study.customers}
+          outcomeWindowDays={study.outcomeWindowDays}
+          launchedAt={study.launchedAt}
+        />
+      )}
+
       {/* Next-steps guidance (RANDOMIZED only) */}
       {isRandomized && (
         <Card>
@@ -99,22 +121,30 @@ export default async function StudyPage({
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground flex flex-col gap-2">
             <p>
-              Your customers have been randomly assigned. Use the table below to
-              see who should receive your email.
+              Your customers have been randomly assigned. Click{" "}
+              <strong className="text-foreground">Send Emails</strong> to send
+              your email to the treatment group via Resend, or use your own
+              email tool and click{" "}
+              <strong className="text-foreground">Calculate Results</strong>{" "}
+              after the outcome window closes.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Collecting guidance */}
+      {isCollecting && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Collecting data</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground flex flex-col gap-2">
             <p>
-              Send your email to the{" "}
-              <strong className="text-foreground">treatment group</strong> using
-              your own email tool. After your {study.outcomeWindowDays}-day
-              outcome window closes
-              {windowCloseDate
-                ? ` (${windowCloseDate.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })})`
-                : ""}
-              , enter each customer&apos;s revenue in the table and click{" "}
+              Emails are sent. Enter each customer&apos;s revenue in the table
+              below or use{" "}
+              <strong className="text-foreground">Bulk Import Revenue</strong>{" "}
+              to upload a CSV. Once your {study.outcomeWindowDays}-day outcome
+              window closes, click{" "}
               <strong className="text-foreground">Calculate Results</strong>.
             </p>
           </CardContent>
@@ -123,10 +153,18 @@ export default async function StudyPage({
 
       {/* Customer table */}
       <section>
-        <h2 className="text-lg font-semibold mb-4">
-          Customers ({treatmentCount} treatment / {controlCount} control)
-        </h2>
-        <CustomerTable customers={study.customers} editable={!isCompleted} />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">
+            Customers ({treatmentCount} treatment / {controlCount} control)
+          </h2>
+          {(isCollecting || isRandomized) && (
+            <BulkImportButton studyId={study.id} />
+          )}
+        </div>
+        <CustomerTable
+          customers={study.customers}
+          editable={!isCompleted}
+        />
       </section>
     </div>
   );
