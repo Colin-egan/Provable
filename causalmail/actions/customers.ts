@@ -35,7 +35,7 @@ export async function bulkImportRevenue(
   const results = await Promise.all(
     rows.map(({ email, revenue }) =>
       db.customer.updateMany({
-        where: { studyId, email },
+        where: { studyId, email: { equals: email, mode: "insensitive" } },
         data: { [field]: revenue },
       })
     )

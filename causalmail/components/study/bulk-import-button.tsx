@@ -60,14 +60,17 @@ export function BulkImportButton({
       header: true,
       skipEmptyLines: true,
       complete({ data, meta }) {
-        const cols = meta.fields ?? [];
+        const cols = (meta.fields ?? []).map((c) => c.toLowerCase());
         if (!cols.includes("email") || !cols.includes("revenue")) {
           setError('CSV must have "email" and "revenue" columns.');
           return;
         }
 
         const rows: RevenueRow[] = [];
-        for (const row of data) {
+        for (const raw of data) {
+          // Normalize keys to lowercase so "Email", "EMAIL" etc. all work
+          const row: Record<string, string> = {};
+          for (const [k, v] of Object.entries(raw)) row[k.toLowerCase()] = v as string;
           const email = row.email?.trim().toLowerCase();
           const revenue = parseFloat(row.revenue);
           if (!email || isNaN(revenue) || revenue < 0) continue;

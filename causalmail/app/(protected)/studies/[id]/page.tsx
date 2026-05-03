@@ -164,7 +164,7 @@ export default async function StudyPage({
               label="Import Baseline Revenue"
             />
           )}
-          {isCollecting && (
+          {(isCollecting || isCompleted) && (
             <BulkImportButton studyId={study.id} />
           )}
         </div>
