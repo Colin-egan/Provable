@@ -8,6 +8,7 @@ import { ExportButton } from "@/components/study/export-button";
 import { SendEmailsButton } from "@/components/study/send-emails-button";
 import { TrackingPanel } from "@/components/study/tracking-panel";
 import { BulkImportButton } from "@/components/study/bulk-import-button";
+import { TestImportButton } from "@/components/study/test-import-button";
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Draft",
@@ -166,6 +167,9 @@ export default async function StudyPage({
           )}
           {(isCollecting || isCompleted) && (
             <BulkImportButton studyId={study.id} />
+          )}
+          {!isCompleted && (
+            <TestImportButton studyId={study.id} />
           )}
         </div>
         <CustomerTable
